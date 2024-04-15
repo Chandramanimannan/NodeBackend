@@ -680,6 +680,37 @@ async function listSettlement(req, res) {
   }
 }
 
+async function getCompanyList(req, res) {
+  try {
+    const companyNames = await Client.distinct("company_name");
+    res.json(companyNames);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+async function getCurrenciesOfCompany(req, res) {
+  try {
+    const companyName = req.query.companyName;
+
+    if (!companyName) {
+      return res.status(400).json({ message: "Company name is required" });
+    }
+
+    const client = await Client.findOne({ company_name: companyName });
+
+    if (!client) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    res.json({ currencies: client.currency });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
 module.exports = {
   createSettlement,
   previewSettlement,
@@ -687,4 +718,6 @@ module.exports = {
   updateSettlement,
   getSettlementRecordforPDF,
   listSettlement,
+  getCompanyList,
+  getCurrenciesOfCompany,
 };
