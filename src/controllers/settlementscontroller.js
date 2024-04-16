@@ -684,8 +684,8 @@ async function listSettlement(req, res) {
 
 async function getCompanyList(req, res) {
   try {
-    const companyNames = await Client.distinct("company_name");
-    res.json(companyNames);
+    const company_names = await Client.distinct("company_name");
+    res.json(company_names);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
@@ -694,13 +694,13 @@ async function getCompanyList(req, res) {
 
 async function getCurrenciesOfCompany(req, res) {
   try {
-    const companyName = req.query.companyName;
+    const company_name = req.query.company_name;
 
-    if (!companyName) {
+    if (!company_name) {
       return res.status(400).json({ message: "Company name is required" });
     }
 
-    const client = await Client.findOne({ company_name: companyName });
+    const client = await Client.findOne({ company_name: company_name });
 
     if (!client) {
       return res.status(404).json({ message: "Company not found" });
