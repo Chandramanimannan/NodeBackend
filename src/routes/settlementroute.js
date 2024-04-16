@@ -8,6 +8,7 @@ const {
   listSettlement,
   getCompanyList,
   getCurrenciesOfCompany,
+  sendEmail,
 } = require("../controllers/settlementscontroller");
 
 const router = express.Router();
@@ -20,5 +21,6 @@ router.get("/getsettlementrecordforpdf", getSettlementRecordforPDF);
 router.get("/listsettlement", listSettlement);
 router.get("/companylist", getCompanyList);
 router.get("/currenciesforcompany", getCurrenciesOfCompany);
+router.post("/sendemail", sendEmail);
 
 module.exports = router;

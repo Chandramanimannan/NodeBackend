@@ -1,4 +1,6 @@
 require("../config/database");
+const nodemailer = require("nodemailer");
+
 const Ratetable = require("../models/Ratetable");
 const Settlementtable = require("../models/Settlementtable");
 const Transactiontable = require("../models/Transactiontable");
@@ -711,6 +713,38 @@ async function getCurrenciesOfCompany(req, res) {
   }
 }
 
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: "annagarciagalleria@gmail.com",
+    pass: "meeg jhhs pafp apmo",
+  },
+});
+
+async function sendEmail(req, res) {
+  const { fromEmail, toEmail, subject, message } = req.body;
+  try {
+    console.table([fromEmail, toEmail, subject, message]);
+
+    const mailOptions = {
+      from: fromEmail,
+      to: toEmail,
+      subject: subject,
+      text: message,
+    };
+
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log("Email sent successfully");
+      }
+    });
+  } catch {}
+}
+
 module.exports = {
   createSettlement,
   previewSettlement,
@@ -720,4 +754,5 @@ module.exports = {
   listSettlement,
   getCompanyList,
   getCurrenciesOfCompany,
+  sendEmail,
 };

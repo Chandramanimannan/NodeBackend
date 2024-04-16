@@ -305,7 +305,6 @@ const weeklyCardComparison = async (req, res) => {
       },
       cardtype: "Visa",
     });
-    h;
 
     const previousWeekVisaTransactions = await Transactiontable.find({
       transactiondate: {
