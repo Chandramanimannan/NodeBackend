@@ -1,7 +1,6 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-const secretKey = "CentpaysSecretKey";
 
 async function login(req, res) {
   try {
@@ -12,9 +11,13 @@ async function login(req, res) {
 
     // Check if the user exists and verify the password
     if (user && (await bcrypt.compare(password, user.password))) {
-      const token = jwt.sign({ userId: user.id, email }, secretKey, {
-        expiresIn: "30m",
-      });
+      const token = jwt.sign(
+        { userId: user.id, email },
+        process.env.SECRET_KEY,
+        {
+          expiresIn: "30m",
+        }
+      );
 
       res.status(200).json({ message: "Login successful", token, user });
     } else {

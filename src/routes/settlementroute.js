@@ -11,6 +11,7 @@ const {
   getCompanyList,
   getCurrenciesOfCompany,
   sendEmail,
+  getCounts,
 } = require("../controllers/settlementscontroller");
 
 const router = express.Router();
@@ -25,5 +26,6 @@ router.get("/listsettlement", listSettlement);
 router.get("/companylist", getCompanyList);
 router.get("/currenciesforcompany", getCurrenciesOfCompany);
 router.post("/sendemail", upload.single("attachment"), sendEmail);
+router.get("/settlements/counts", getCounts);
 
 module.exports = router;

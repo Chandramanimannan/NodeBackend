@@ -34,6 +34,7 @@ const settlementtableSchema = new mongoose.Schema({
   settlement_vol: { type: Number },
   date_settled: { type: String },
   status: { type: String, default: "Pending" },
+  note: { type: String },
 });
 
 settlementtableSchema.pre("save", async function (next) {

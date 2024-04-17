@@ -22,6 +22,7 @@ async function createSettlement(req, res) {
       usd_chargeback_amount,
       eur_to_usd_exc_rate,
       usd_to_eur_exc_rate,
+      note,
     } = req.body;
     console.log("from", fromDate);
     console.log("to", toDate);
@@ -285,6 +286,7 @@ async function createSettlement(req, res) {
       total_chargeback_amount,
       date_settled: formattedSettlementDate,
       settlement_vol,
+      note,
     });
 
     await settlement_record.save();
@@ -319,6 +321,7 @@ async function previewSettlement(req, res) {
       usd_chargeback_amount,
       eur_to_usd_exc_rate,
       usd_to_eur_exc_rate,
+      note,
     } = req.body;
     console.table([
       typeof fromDate,
@@ -552,6 +555,7 @@ async function previewSettlement(req, res) {
       total_chargeback_amount,
       date_settled: formattedSettlementDate,
       settlement_vol,
+      note,
     };
 
     res.status(201).json({
@@ -773,6 +777,67 @@ async function sendEmail(req, res) {
   }
 }
 
+async function getCounts(req, res) {
+  try {
+    const { company_name, fromDate, toDate } = req.body;
+
+    var [year, month, day] = fromDate.substring(0, 10).split("-");
+    const formattedfromDate = `${day}/${month}/${year} 00:00:00`;
+
+    [year, month, day] = toDate.substring(0, 10).split("-");
+    const formattedtoDate = `${day}/${month}/${year} 23:59:59`;
+
+    const all_txn_of_company = await Transactiontable.find({
+      merchant: company_name,
+      transactiondate: {
+        $gte: formattedfromDate,
+        $lte: formattedtoDate,
+      },
+    });
+
+    currencies_data = await Client.findOne({ company_name });
+    currencies = currencies_data["currency"];
+
+    const app_dec_calculation = {};
+    currencies.forEach((currency) => {
+      app_dec_calculation[currency] = calculateAppDecValues(
+        all_txn_of_company,
+        currency
+      );
+    });
+
+    res.json(app_dec_calculation);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to calculate currency values" });
+  }
+}
+
+function calculateAppDecValues(transactions, currency) {
+  const currency_txn = transactions.filter(
+    (transaction) => transaction.currency === currency
+  );
+
+  const { approved_txns, declined_txns } = currency_txn.reduce(
+    (result, transaction) => {
+      if (transaction.Status === "Success") {
+        result.approved_txns.push(transaction);
+      } else if (transaction.Status === "Failed") {
+        result.declined_txns.push(transaction);
+      }
+      return result;
+    },
+    { approved_txns: [], declined_txns: [] }
+  );
+
+  const approved_count = approved_txns.length;
+  const declined_count = declined_txns.length;
+  return {
+    approved_count,
+    declined_count,
+  };
+}
+
 module.exports = {
   createSettlement,
   previewSettlement,
@@ -783,4 +848,5 @@ module.exports = {
   getCompanyList,
   getCurrenciesOfCompany,
   sendEmail,
+  getCounts,
 };
