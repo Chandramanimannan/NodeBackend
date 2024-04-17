@@ -23,7 +23,6 @@ async function createSettlement(req, res) {
       eur_to_usd_exc_rate,
       usd_to_eur_exc_rate,
     } = req.body;
-
     console.log("from", fromDate);
     console.log("to", toDate);
 
@@ -274,11 +273,15 @@ async function createSettlement(req, res) {
       dec_amount,
       RR_amount,
       settlement_fee_amount,
-      refund_count,
-      refunds_amount,
+      eur_no_of_refund,
+      usd_no_of_refund,
+      eur_refund_amount,
+      usd_refund_amount,
+      eur_no_of_chargeback,
+      usd_no_of_chargeback,
+      eur_chargeback_amount,
+      usd_chargeback_amount,
       total_refund_amount,
-      chargeback_count,
-      chargebacks_amount,
       total_chargeback_amount,
       date_settled: formattedSettlementDate,
       settlement_vol,
@@ -317,7 +320,14 @@ async function previewSettlement(req, res) {
       eur_to_usd_exc_rate,
       usd_to_eur_exc_rate,
     } = req.body;
-
+    console.table([
+      typeof fromDate,
+      typeof eur_no_of_refund,
+      typeof usd_refund_amount,
+      typeof usd_no_of_chargeback,
+      typeof eur_chargeback_amount,
+      typeof usd_to_eur_exc_rate,
+    ]);
     var [year, month, day] = fromDate.substring(0, 10).split("-");
     const formattedfromDate = `${day}/${month}/${year} 00:00:00`;
 
@@ -527,11 +537,18 @@ async function previewSettlement(req, res) {
       dec_amount,
       RR_amount,
       settlement_fee_amount,
-      refund_count,
-      refunds_amount,
+
+      eur_no_of_refund,
+      usd_no_of_refund,
+      eur_refund_amount,
+      usd_refund_amount,
+      eur_no_of_chargeback,
+      usd_no_of_chargeback,
+      eur_chargeback_amount,
+      usd_chargeback_amount,
+
       total_refund_amount,
-      chargeback_count,
-      chargebacks_amount,
+
       total_chargeback_amount,
       date_settled: formattedSettlementDate,
       settlement_vol,
@@ -725,24 +742,35 @@ const transporter = nodemailer.createTransport({
 
 async function sendEmail(req, res) {
   const { fromEmail, toEmail, subject, message } = req.body;
+  const attachment = req.file;
+  console.log(req.file);
   try {
-    console.table([fromEmail, toEmail, subject, message]);
+    console.table([fromEmail, toEmail, subject, message, attachment]);
 
     const mailOptions = {
       from: fromEmail,
       to: toEmail,
       subject: subject,
       text: message,
+      attachments: attachment
+        ? [
+            {
+              filename: attachment.originalname,
+
+              contentType: attachment.mimetype,
+            },
+          ]
+        : [],
     };
 
-    transporter.sendMail(mailOptions, function (error, info) {
-      if (error) {
-        console.log(error);
-      } else {
-        console.log("Email sent successfully");
-      }
-    });
-  } catch {}
+    const info = await transporter.sendMail(mailOptions);
+
+    console.log("Email sent successfully:");
+    res.status(200).json({ message: "Email sent successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 }
 
 module.exports = {

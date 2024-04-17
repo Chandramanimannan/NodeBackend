@@ -1,4 +1,6 @@
 const express = require("express");
+const multer = require("multer");
+
 const {
   createSettlement,
   previewSettlement,
@@ -12,6 +14,7 @@ const {
 } = require("../controllers/settlementscontroller");
 
 const router = express.Router();
+const upload = multer();
 
 router.post("/settlements", createSettlement);
 router.post("/previewsettlement", previewSettlement);
@@ -21,6 +24,6 @@ router.get("/getsettlementrecordforpdf", getSettlementRecordforPDF);
 router.get("/listsettlement", listSettlement);
 router.get("/companylist", getCompanyList);
 router.get("/currenciesforcompany", getCurrenciesOfCompany);
-router.post("/sendemail", sendEmail);
+router.post("/sendemail", upload.single("attachment"), sendEmail);
 
 module.exports = router;
