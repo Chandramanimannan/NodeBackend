@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const nodemailer = require("nodemailer");
 
 async function login(req, res) {
   try {
@@ -94,4 +95,81 @@ async function userDetails(req, res) {
   }
 }
 
-module.exports = { login, updateUser, userDetails };
+const sendOTPByEmail = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    console.table([email, otp]);
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ success: false, message: "Invalid email" });
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: {
+        user: "annagarciagalleria@gmail.com",
+        pass: "meeg jhhs pafp apmo",
+      },
+    });
+
+    const mailOptions = {
+      from: "annagarciagalleria@gmail.com",
+      to: email,
+      subject: "Your OTP from CentPays",
+      text: `Dear User, your OTP for verification to reset your password is: ${otp}`,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Email sent:", info.response);
+    return res
+      .status(200)
+      .json({ success: true, message: "OTP sent successfully" });
+  } catch (error) {
+    console.error("Error sending email:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Failed to send OTP email" });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { email, newpassword, confirmpassword } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: "Invalid email" });
+    }
+
+    if (newpassword !== confirmpassword) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Passwords do not match" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newpassword, 10);
+
+    user.password = hashedPassword;
+    await user.save();
+
+    return res
+      .status(200)
+      .json({ success: true, message: "Password updated successfully" });
+  } catch (error) {
+    console.error("Error updating password:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+module.exports = {
+  login,
+  updateUser,
+  userDetails,
+  sendOTPByEmail,
+  resetPassword,
+};

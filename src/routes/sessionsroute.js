@@ -3,6 +3,8 @@ const {
   login,
   updateUser,
   userDetails,
+  sendOTPByEmail,
+  resetPassword,
 } = require("../controllers/sessionscontroller");
 
 const router = express.Router();
@@ -11,5 +13,6 @@ const router = express.Router();
 router.post("/login", login);
 router.put("/updateuser", updateUser);
 router.get("/userdetails", userDetails);
-
-module.exports = router;
+router.post("/forgotpassword", sendOTPByEmail),
+  router.patch("/resetpassword", resetPassword),
+  (module.exports = router);
