@@ -252,11 +252,9 @@ async function transactionCountsForLastNDays(req, res) {
     const { days } = req.query;
 
     if (!days || isNaN(days) || days <= 0) {
-      return res
-        .status(400)
-        .json({
-          error: "Invalid value for 'n'. Please provide a positive integer.",
-        });
+      return res.status(400).json({
+        error: "Invalid value for 'n'. Please provide a positive integer.",
+      });
     }
 
     const currentDate = new Date();
