@@ -37,7 +37,7 @@ async function signup(req, res) {
     // Save the user to the database
     await user.save();
 
-    res.status(201).json({ message: "User created successfully", user: user });
+    res.status(201).json({ message: "User created successfully" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -56,17 +56,11 @@ async function getUsers(req, res) {
 
 async function updateUser(req, res) {
   try {
-    const { id, name, email, mobile_no, country, password, company_name } =
-      req.body;
+    const { id, name, email, mobile_no, country, company_name } = req.body;
 
     const existingUser = await User.findById(id);
     if (!existingUser) {
       return res.status(404).json({ error: "User not found" });
-    }
-
-    if (password) {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      existingUser.password = hashedPassword;
     }
 
     if (name) {

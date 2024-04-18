@@ -726,8 +726,8 @@ async function getCurrenciesOfCompany(req, res) {
     if (!client) {
       return res.status(404).json({ message: "Company not found" });
     }
-
-    res.json({ currencies: client.currency });
+    currencies = client["currency"];
+    res.json(currencies);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
