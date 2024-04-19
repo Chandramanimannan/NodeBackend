@@ -3,7 +3,7 @@ const nodemailer = require("nodemailer");
 
 const Ratetable = require("../models/Ratetable");
 const Settlementtable = require("../models/Settlementtable");
-const Transactiontable = require("../models/Transactiontable");
+const LiveTransactionTable = require("../models/LiveTransactionTable");
 const Client = require("../models/Client");
 
 async function createSettlement(req, res) {
@@ -31,12 +31,12 @@ async function createSettlement(req, res) {
     const formattedfromDate = `${day}/${month}/${year} 00:00:00`;
 
     [year, month, day] = toDate.substring(0, 10).split("-");
-    const formattedtoDate = `${day}/${month}/${year} 23:59:59`;
+    const formattedtoDate = `${day}/${month}/${year} 12:00:00`;
     console.log("from", formattedfromDate);
     console.log("to", formattedtoDate);
 
     //All transactions of Company between from and to date
-    const all_txn_of_company = await Transactiontable.find({
+    const all_txn_of_company = await LiveTransactionTable.find({
       merchant: company_name,
       transactiondate: {
         $gte: formattedfromDate,
@@ -338,7 +338,7 @@ async function previewSettlement(req, res) {
     const formattedtoDate = `${day}/${month}/${year} 23:59:59`;
 
     //All transactions of Company between from and to date
-    const all_txn_of_company = await Transactiontable.find({
+    const all_txn_of_company = await LiveTransactionTable.find({
       merchant: company_name,
       transactiondate: {
         $gte: formattedfromDate,
@@ -787,7 +787,7 @@ async function getCounts(req, res) {
     [year, month, day] = toDate.substring(0, 10).split("-");
     const formattedtoDate = `${day}/${month}/${year} 23:59:59`;
 
-    const all_txn_of_company = await Transactiontable.find({
+    const all_txn_of_company = await LiveTransactionTable.find({
       merchant: company_name,
       transactiondate: {
         $gte: formattedfromDate,
