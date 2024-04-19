@@ -1,9 +1,10 @@
 require("../config/database");
-const Transactiontable = require("../models/Transactiontable");
+const LiveTransactionTable = require("../models/LiveTransactionTable");
 
 const successPercentageToday = async (req, res) => {
   try {
     const currentDate = new Date();
+    console.log(currentDate);
 
     const fromDate = `${("0" + currentDate.getDate()).slice(-2)}/${(
       "0" +
@@ -14,21 +15,23 @@ const successPercentageToday = async (req, res) => {
       "0" +
       (currentDate.getMonth() + 1)
     ).slice(-2)}/${currentDate.getFullYear()} 23:59:59`;
-
-    const successfulTransactions = await Transactiontable.countDocuments({
+    console.log(fromDate);
+    console.log(toDate);
+    const successfulTransactions = await LiveTransactionTable.countDocuments({
       transactiondate: {
         $gte: fromDate,
         $lte: toDate,
       },
       Status: "Success",
     });
-    const totalTransactions = await Transactiontable.countDocuments({
+    console.log("success", successfulTransactions);
+    const totalTransactions = await LiveTransactionTable.countDocuments({
       transactiondate: {
         $gte: fromDate,
         $lte: toDate,
       },
     });
-
+    console.log("total", totalTransactions);
     let successPercentage;
     if (totalTransactions === 0) {
       successPercentage = 0;
@@ -49,17 +52,17 @@ const successAmountToday = async (req, res) => {
   try {
     const currentDate = new Date();
 
-    const fromDate = `${("0" + currentDate.getDate()).slice(-2)}/${(
+    const fromDate = `${currentDate.getFullYear()}-${(
       "0" +
       (currentDate.getMonth() + 1)
-    ).slice(-2)}/${currentDate.getFullYear()} 00:00:00`;
+    ).slice(-2)}-${("0" + currentDate.getDate()).slice(-2)} 00:00:00`;
 
-    const toDate = `${("0" + currentDate.getDate()).slice(-2)}/${(
+    const toDate = `${currentDate.getFullYear()}-${(
       "0" +
       (currentDate.getMonth() + 1)
-    ).slice(-2)}/${currentDate.getFullYear()} 23:59:59`;
+    ).slice(-2)}-${("0" + currentDate.getDate()).slice(-2)} 23:59:59`;
 
-    const successAmounts = await Transactiontable.aggregate([
+    const successAmounts = await LiveTransactionTable.aggregate([
       {
         $match: {
           transactiondate: {
@@ -108,7 +111,7 @@ const transactionCountToday = async (req, res) => {
     ).slice(-2)}/${currentDate.getFullYear()} 23:59:59`;
 
     // Calculate total number of transactions for the day
-    const totalTransactions = await Transactiontable.countDocuments({
+    const totalTransactions = await LiveTransactionTable.countDocuments({
       transactiondate: {
         $gte: fromDate,
         $lte: toDate,
@@ -141,7 +144,7 @@ const weeklySuccessVsFailed = async (req, res) => {
         (dayDate.getMonth() + 1)
       ).slice(-2)}/${dayDate.getFullYear()} 23:59:59`;
 
-      const successCount = await Transactiontable.countDocuments({
+      const successCount = await LiveTransactionTable.countDocuments({
         transactiondate: {
           $gte: fromDate,
           $lt: toDate,
@@ -149,7 +152,7 @@ const weeklySuccessVsFailed = async (req, res) => {
         Status: "Success",
       });
 
-      const failedCount = await Transactiontable.countDocuments({
+      const failedCount = await LiveTransactionTable.countDocuments({
         transactiondate: {
           $gte: fromDate,
           $lt: toDate,
@@ -190,7 +193,7 @@ const weeklyTransactionAmount = async (req, res) => {
         (currentDate.getMonth() + 1)
       ).slice(-2)}/${currentDate.getFullYear()} 23:59:59`;
 
-      const successTransactions = await Transactiontable.find({
+      const successTransactions = await LiveTransactionTable.find({
         transactiondate: {
           $gte: fromDate,
           $lt: toDate,
@@ -201,7 +204,7 @@ const weeklyTransactionAmount = async (req, res) => {
         successThisWeek += txn.amount;
       });
 
-      const failedTransactions = await Transactiontable.find({
+      const failedTransactions = await LiveTransactionTable.find({
         transactiondate: {
           $gte: fromDate,
           $lt: toDate,
@@ -239,7 +242,7 @@ const weeklyTransactionCount = async (req, res) => {
         (currentDate.getMonth() + 1)
       ).slice(-2)}/${currentDate.getFullYear()} 23:59:59`;
 
-      const transactionCount = await Transactiontable.countDocuments({
+      const transactionCount = await LiveTransactionTable.countDocuments({
         transactiondate: {
           $gte: fromDate,
           $lte: toDate,
@@ -297,7 +300,7 @@ const weeklyCardComparison = async (req, res) => {
       -2
     )}/${previousWeekEndDate.getFullYear()} 23:59:59`;
 
-    const currentWeekVisaTransactions = await Transactiontable.find({
+    const currentWeekVisaTransactions = await LiveTransactionTable.find({
       transactiondate: {
         $gte: formattedCurrentWeekStartDate,
         $lte: formattedCurrentWeekEndDate,
@@ -305,7 +308,7 @@ const weeklyCardComparison = async (req, res) => {
       cardtype: "Visa",
     });
 
-    const previousWeekVisaTransactions = await Transactiontable.find({
+    const previousWeekVisaTransactions = await LiveTransactionTable.find({
       transactiondate: {
         $gte: formattedPreviousWeekStartDate,
         $lte: formattedPreviousWeekEndDate,
@@ -313,7 +316,7 @@ const weeklyCardComparison = async (req, res) => {
       cardtype: "Visa",
     });
 
-    const currentWeekMastercardTransactions = await Transactiontable.find({
+    const currentWeekMastercardTransactions = await LiveTransactionTable.find({
       transactiondate: {
         $gte: formattedCurrentWeekStartDate,
         $lte: formattedCurrentWeekEndDate,
@@ -321,7 +324,7 @@ const weeklyCardComparison = async (req, res) => {
       cardtype: "Mastercard",
     });
 
-    const previousWeekMastercardTransactions = await Transactiontable.find({
+    const previousWeekMastercardTransactions = await LiveTransactionTable.find({
       transactiondate: {
         $gte: formattedPreviousWeekStartDate,
         $lte: formattedPreviousWeekEndDate,
@@ -379,7 +382,7 @@ const weeklyTop4Countries = async (req, res) => {
       (toWeekDate.getMonth() + 1)
     ).slice(-2)}/${toWeekDate.getFullYear()} 23:59:59`;
 
-    const transactionsCurrentWeek = await Transactiontable.find({
+    const transactionsCurrentWeek = await LiveTransactionTable.find({
       transactiondate: {
         $gte: formattedFromWeekDate,
         $lte: formattedToWeekDate,
@@ -447,7 +450,7 @@ const weeklySuccessMetrics = async (req, res) => {
         (currentDate.getMonth() + 1)
       ).slice(-2)}/${currentDate.getFullYear()} 23:59:59`;
 
-      const successCount = await Transactiontable.countDocuments({
+      const successCount = await LiveTransactionTable.countDocuments({
         transactiondate: {
           $gte: fromDate,
           $lte: toDate,
@@ -471,7 +474,7 @@ const weeklySuccessMetrics = async (req, res) => {
         (currentDate.getMonth() + 1)
       ).slice(-2)}/${currentDate.getFullYear()} 23:59:59`;
 
-      const successCount = await Transactiontable.countDocuments({
+      const successCount = await LiveTransactionTable.countDocuments({
         transactiondate: {
           $gte: fromDate,
           $lte: toDate,
@@ -536,7 +539,7 @@ const last6Months = async (req, res) => {
         (sixMonthsAgo.getMonth() + 2)
       ).slice(-2)}/${sixMonthsAgo.getFullYear()} 23:59:59`;
 
-      const sales = await Transactiontable.find({
+      const sales = await LiveTransactionTable.find({
         transactiondate: {
           $gte: fromDate,
           $lt: nextMonthDate,
@@ -622,20 +625,22 @@ const monthlyTransactionMetrics = async (req, res) => {
       -2
     )}/${lastDayOfPreviousMonth.getFullYear()} 23:59:59`;
 
-    const successfulTransactionsThisMonth = await Transactiontable.find({
+    const successfulTransactionsThisMonth = await LiveTransactionTable.find({
       transactiondate: { $gte: fromDate, $lt: toDate },
       Status: "Success",
     });
 
-    const successfulTransactionsPreviousMonth = await Transactiontable.find({
-      transactiondate: {
-        $gte: fromDatePreviousMonth,
-        $lt: toDatePreviousMonth,
-      },
-      Status: "Success",
-    });
+    const successfulTransactionsPreviousMonth = await LiveTransactionTable.find(
+      {
+        transactiondate: {
+          $gte: fromDatePreviousMonth,
+          $lt: toDatePreviousMonth,
+        },
+        Status: "Success",
+      }
+    );
 
-    const allTransactions = await Transactiontable.find({
+    const allTransactions = await LiveTransactionTable.find({
       transactiondate: { $gte: fromDate, $lt: toDate },
     });
 
