@@ -7,6 +7,6 @@ const router = express.Router();
 
 // Define user routes
 router.post("/clients", createClient);
-router.get("/clients", verifyToken, getClient);
+router.get("/clients", getClient);
 
 module.exports = router;
