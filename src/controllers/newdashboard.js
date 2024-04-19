@@ -4,43 +4,41 @@ const LiveTransactionTable = require("../models/LiveTransactionTable");
 const successPercentageToday = async (req, res) => {
   try {
     const currentDate = new Date();
-    console.log(currentDate);
-
     const fromDate = `${("0" + currentDate.getDate()).slice(-2)}/${(
       "0" +
       (currentDate.getMonth() + 1)
     ).slice(-2)}/${currentDate.getFullYear()} 00:00:00`;
-
     const toDate = `${("0" + currentDate.getDate()).slice(-2)}/${(
       "0" +
       (currentDate.getMonth() + 1)
     ).slice(-2)}/${currentDate.getFullYear()} 23:59:59`;
-    console.log(fromDate);
-    console.log(toDate);
-    const successfulTransactions = await LiveTransactionTable.countDocuments({
-      transactiondate: {
-        $gte: fromDate,
-        $lte: toDate,
-      },
-      Status: "Success",
+
+    const transactions = await LiveTransactionTable.find({
+      transactiondate: { $gte: fromDate, $lte: toDate },
     });
-    console.log("success", successfulTransactions);
-    const totalTransactions = await LiveTransactionTable.countDocuments({
-      transactiondate: {
-        $gte: fromDate,
-        $lte: toDate,
+
+    const totalTransactions = transactions.length;
+
+    const successfulTransactions = transactions.filter(
+      (transaction) => transaction.Status === "Success"
+    );
+
+    const successCount = successfulTransactions.length;
+
+    const successPercentage =
+      totalTransactions === 0 ? 0 : (successCount / totalTransactions) * 100;
+
+    const successAmount = successfulTransactions.reduce(
+      (total, transaction) => {
+        return total + transaction.amount;
       },
-    });
-    console.log("total", totalTransactions);
-    let successPercentage;
-    if (totalTransactions === 0) {
-      successPercentage = 0;
-    } else {
-      successPercentage = (successfulTransactions / totalTransactions) * 100;
-    }
+      0
+    );
 
     res.status(200).json({
       successPercentage: successPercentage.toFixed(2),
+      successAmount: successAmount.toFixed(3),
+      totalTransactions,
     });
   } catch (error) {
     console.error("Error:", error);
@@ -48,91 +46,78 @@ const successPercentageToday = async (req, res) => {
   }
 };
 
-const successAmountToday = async (req, res) => {
-  try {
-    const currentDate = new Date();
-
-    const fromDate = `${currentDate.getFullYear()}-${(
-      "0" +
-      (currentDate.getMonth() + 1)
-    ).slice(-2)}-${("0" + currentDate.getDate()).slice(-2)} 00:00:00`;
-
-    const toDate = `${currentDate.getFullYear()}-${(
-      "0" +
-      (currentDate.getMonth() + 1)
-    ).slice(-2)}-${("0" + currentDate.getDate()).slice(-2)} 23:59:59`;
-
-    const successAmounts = await LiveTransactionTable.aggregate([
-      {
-        $match: {
-          transactiondate: {
-            $gte: fromDate,
-            $lte: toDate,
-          },
-          Status: "Success",
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          successAmount: { $sum: "$amount" },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          successAmount: 1,
-        },
-      },
-    ]);
-
-    res.status(200).json(successAmounts);
-  } catch (error) {
-    console.error("Error calculating success amount:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-};
-
-const transactionCountToday = async (req, res) => {
-  try {
-    // Get current date
-    const currentDate = new Date();
-
-    // Format fromDate
-    const fromDate = `${("0" + currentDate.getDate()).slice(-2)}/${(
-      "0" +
-      (currentDate.getMonth() + 1)
-    ).slice(-2)}/${currentDate.getFullYear()} 00:00:00`;
-
-    // Format toDate
-    const toDate = `${("0" + currentDate.getDate()).slice(-2)}/${(
-      "0" +
-      (currentDate.getMonth() + 1)
-    ).slice(-2)}/${currentDate.getFullYear()} 23:59:59`;
-
-    // Calculate total number of transactions for the day
-    const totalTransactions = await LiveTransactionTable.countDocuments({
-      transactiondate: {
-        $gte: fromDate,
-        $lte: toDate,
-      },
-    });
-
-    res.status(200).json({ totalTransactions });
-  } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
-
-const weeklySuccessVsFailed = async (req, res) => {
+const weeklyStats = async (req, res) => {
   try {
     const currentDate = new Date();
     const results = [];
+    let successThisWeek = 0;
+    let failedThisWeek = 0;
+    const transactionCounts = [];
+    const previousWeekSuccessCounts = {};
 
     for (let i = 0; i < 7; i++) {
-      const countsForDay = [];
-      const dayDate = new Date();
+      const dayDate = new Date(currentDate);
+      dayDate.setDate(currentDate.getDate() - i);
+
+      const formattedFromDate = `${("0" + dayDate.getDate()).slice(-2)}/${(
+        "0" +
+        (dayDate.getMonth() + 1)
+      ).slice(-2)}/${dayDate.getFullYear()} 00:00:00`;
+
+      const formattedToDate = `${("0" + dayDate.getDate()).slice(-2)}/${(
+        "0" +
+        (dayDate.getMonth() + 1)
+      ).slice(-2)}/${dayDate.getFullYear()} 23:59:59`;
+
+      const totalTransactions = await LiveTransactionTable.find({
+        transactiondate: {
+          $gte: formattedFromDate,
+          $lte: formattedToDate,
+        },
+      });
+
+      const { successTransactions, failedTransactions } =
+        totalTransactions.reduce(
+          (result, transaction) => {
+            if (transaction.Status === "Success") {
+              result.successTransactions.push(transaction);
+            } else if (transaction.Status === "Failed") {
+              result.failedTransactions.push(transaction);
+            }
+            return result;
+          },
+          { successTransactions: [], failedTransactions: [] }
+        );
+
+      const successAmount = successTransactions.reduce(
+        (total, txn) => total + txn.amount,
+        0
+      );
+      console.log("successAMout", successAmount);
+      const failedAmount = failedTransactions.reduce(
+        (total, txn) => total + txn.amount,
+        0
+      );
+      console.log("failedAmount", failedAmount);
+      results.push({
+        date: formattedFromDate.split(" ")[0],
+        successCount: successTransactions.length,
+        failedCount: failedTransactions.length,
+      });
+      console.log("results", results);
+      successThisWeek += successAmount;
+      failedThisWeek += failedAmount;
+
+      const transactionCount = totalTransactions.length;
+
+      transactionCounts.push({
+        date: dayDate.toLocaleDateString("en-US"),
+        count: transactionCount,
+      });
+    }
+
+    for (let i = 7; i < 14; i++) {
+      const dayDate = new Date(currentDate);
       dayDate.setDate(currentDate.getDate() - i);
 
       const fromDate = `${("0" + dayDate.getDate()).slice(-2)}/${(
@@ -144,123 +129,46 @@ const weeklySuccessVsFailed = async (req, res) => {
         (dayDate.getMonth() + 1)
       ).slice(-2)}/${dayDate.getFullYear()} 23:59:59`;
 
-      const successCount = await LiveTransactionTable.countDocuments({
-        transactiondate: {
-          $gte: fromDate,
-          $lt: toDate,
-        },
-        Status: "Success",
-      });
-
-      const failedCount = await LiveTransactionTable.countDocuments({
-        transactiondate: {
-          $gte: fromDate,
-          $lt: toDate,
-        },
-        Status: "Failed",
-      });
-
-      countsForDay.push({
-        date: dayDate.toISOString().split("T")[0],
-        successCount,
-        failedCount,
-      });
-
-      results.push(countsForDay);
-    }
-    res.status(200).json({ results });
-  } catch (error) {
-    console.error("Error calculating past seven days counts:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-};
-
-const weeklyTransactionAmount = async (req, res) => {
-  try {
-    let successThisWeek = 0;
-    let failedThisWeek = 0;
-
-    for (let i = 0; i <= 6; i++) {
-      const currentDate = new Date();
-      currentDate.setDate(currentDate.getDate() - i);
-
-      const fromDate = `${("0" + currentDate.getDate()).slice(-2)}/${(
-        "0" +
-        (currentDate.getMonth() + 1)
-      ).slice(-2)}/${currentDate.getFullYear()} 00:00:00`;
-      const toDate = `${("0" + currentDate.getDate()).slice(-2)}/${(
-        "0" +
-        (currentDate.getMonth() + 1)
-      ).slice(-2)}/${currentDate.getFullYear()} 23:59:59`;
-
-      const successTransactions = await LiveTransactionTable.find({
-        transactiondate: {
-          $gte: fromDate,
-          $lt: toDate,
-        },
-        Status: "Success",
-      });
-      successTransactions.forEach((txn) => {
-        successThisWeek += txn.amount;
-      });
-
-      const failedTransactions = await LiveTransactionTable.find({
-        transactiondate: {
-          $gte: fromDate,
-          $lt: toDate,
-        },
-        Status: "Failed",
-      });
-      failedTransactions.forEach((txn) => {
-        failedThisWeek += txn.amount;
-      });
-    }
-
-    const totalThisWeek = successThisWeek + failedThisWeek;
-
-    res.status(200).json({ successThisWeek, failedThisWeek, totalThisWeek });
-  } catch (error) {
-    console.error("Error calculating transaction amounts:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-};
-
-const weeklyTransactionCount = async (req, res) => {
-  try {
-    const transactionCounts = {};
-
-    for (let i = 0; i < 7; i++) {
-      const currentDate = new Date();
-      currentDate.setDate(currentDate.getDate() - i);
-
-      const fromDate = `${("0" + currentDate.getDate()).slice(-2)}/${(
-        "0" +
-        (currentDate.getMonth() + 1)
-      ).slice(-2)}/${currentDate.getFullYear()} 00:00:00`;
-      const toDate = `${("0" + currentDate.getDate()).slice(-2)}/${(
-        "0" +
-        (currentDate.getMonth() + 1)
-      ).slice(-2)}/${currentDate.getFullYear()} 23:59:59`;
-
-      const transactionCount = await LiveTransactionTable.countDocuments({
+      const successfulCount = await LiveTransactionTable.countDocuments({
         transactiondate: {
           $gte: fromDate,
           $lte: toDate,
         },
+        Status: "Success",
       });
-
-      transactionCounts[currentDate.toLocaleDateString("en-US")] =
-        transactionCount;
+      previousWeekSuccessCounts[dayDate.toLocaleDateString("en-US")] =
+        successfulCount;
     }
 
-    const totalThisWeek = Object.values(transactionCounts).reduce(
-      (total, count) => total + count,
-      0
+    const totalThisWeek = parseFloat(
+      (successThisWeek + failedThisWeek).toFixed(3)
     );
+    const totalPreviousWeekSuccessCount = Object.values(
+      previousWeekSuccessCounts
+    ).reduce((total, count) => total + count, 0);
 
-    res.status(200).json({ ...transactionCounts, totalThisWeek });
+    let percentageChange;
+    if (totalPreviousWeekSuccessCount !== 0) {
+      percentageChange =
+        ((successThisWeek - totalPreviousWeekSuccessCount) /
+          (totalPreviousWeekSuccessCount + successThisWeek)) *
+        100;
+    } else {
+      percentageChange = 100;
+    }
+    successThisWeek = parseFloat(successThisWeek.toFixed(3));
+    failedThisWeek = parseFloat(failedThisWeek.toFixed(3));
+
+    res.status(200).json({
+      results,
+      successThisWeek,
+      failedThisWeek,
+      totalThisWeek,
+      transactionCounts,
+      percentageChange,
+    });
   } catch (error) {
-    console.error("Error calculating transaction counts:", error);
+    console.error("Error calculating past seven days counts:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -300,37 +208,51 @@ const weeklyCardComparison = async (req, res) => {
       -2
     )}/${previousWeekEndDate.getFullYear()} 23:59:59`;
 
-    const currentWeekVisaTransactions = await LiveTransactionTable.find({
+    const currentWeekTransactions = await LiveTransactionTable.find({
       transactiondate: {
         $gte: formattedCurrentWeekStartDate,
         $lte: formattedCurrentWeekEndDate,
       },
-      cardtype: "Visa",
     });
 
-    const previousWeekVisaTransactions = await LiveTransactionTable.find({
+    const previousWeekTransactions = await LiveTransactionTable.find({
       transactiondate: {
         $gte: formattedPreviousWeekStartDate,
         $lte: formattedPreviousWeekEndDate,
       },
-      cardtype: "Visa",
     });
 
-    const currentWeekMastercardTransactions = await LiveTransactionTable.find({
-      transactiondate: {
-        $gte: formattedCurrentWeekStartDate,
-        $lte: formattedCurrentWeekEndDate,
-      },
-      cardtype: "Mastercard",
-    });
+    const { currentWeekVisaTransactions, currentWeekMastercardTransactions } =
+      currentWeekTransactions.reduce(
+        (result, transaction) => {
+          if (transaction.cardtype === "Visa") {
+            result.currentWeekVisaTransactions.push(transaction);
+          } else if (transaction.cardtype === "Mastercard") {
+            result.currentWeekMastercardTransactions.push(transaction);
+          }
+          return result;
+        },
+        {
+          currentWeekVisaTransactions: [],
+          currentWeekMastercardTransactions: [],
+        }
+      );
 
-    const previousWeekMastercardTransactions = await LiveTransactionTable.find({
-      transactiondate: {
-        $gte: formattedPreviousWeekStartDate,
-        $lte: formattedPreviousWeekEndDate,
-      },
-      cardtype: "Mastercard",
-    });
+    const { previousWeekVisaTransactions, previousWeekMastercardTransactions } =
+      previousWeekTransactions.reduce(
+        (result, transaction) => {
+          if (transaction.cardtype === "Visa") {
+            result.previousWeekVisaTransactions.push(transaction);
+          } else if (transaction.cardtype === "Mastercard") {
+            result.previousWeekMastercardTransactions.push(transaction);
+          }
+          return result;
+        },
+        {
+          previousWeekVisaTransactions: [],
+          previousWeekMastercardTransactions: [],
+        }
+      );
 
     const currentWeekVisaAmount = currentWeekVisaTransactions.reduce(
       (total, transaction) => total + transaction.amount,
@@ -352,9 +274,12 @@ const weeklyCardComparison = async (req, res) => {
         0
       );
 
-    const visaDifference = currentWeekVisaAmount - previousWeekVisaAmount;
-    const mastercardDifference =
-      currentWeekMastercardAmount - previousWeekMastercardAmount;
+    const visaDifference = parseFloat(
+      (currentWeekVisaAmount - previousWeekVisaAmount).toFixed(3)
+    );
+    const mastercardDifference = parseFloat(
+      (currentWeekMastercardAmount - previousWeekMastercardAmount).toFixed(3)
+    );
 
     res.status(200).json({ visaDifference, mastercardDifference });
   } catch (error) {
@@ -389,7 +314,11 @@ const weeklyTop4Countries = async (req, res) => {
       },
     });
 
-    transactionsCurrentWeek.forEach((transaction) => {
+    const filteredTransactions = transactionsCurrentWeek.filter(
+      (transaction) => transaction.country !== "0"
+    );
+
+    filteredTransactions.forEach((transaction) => {
       const country = transaction.country;
 
       if (!countryStats[country]) {
@@ -404,18 +333,26 @@ const weeklyTop4Countries = async (req, res) => {
     });
 
     const sortedCountries = Object.keys(countryStats).sort((a, b) => {
-      return countryStats[b].totalAmount - countryStats[a].totalAmount;
+      return (
+        countryStats[b].transactionCount - countryStats[a].transactionCount
+      );
     });
 
     const top4Countries = sortedCountries.slice(0, 4);
-    const sumOfAmounts = top4Countries.reduce((sum, country) => {
-      return sum + countryStats[country].totalAmount;
-    }, 0);
+    const sumOfAmounts = parseFloat(
+      top4Countries
+        .reduce((sum, country) => {
+          return sum + countryStats[country].totalAmount;
+        }, 0)
+        .toFixed(3)
+    );
 
     const results = top4Countries.map((country) => ({
       country: country,
-      transactionCount: countryStats[country].transactionCount,
-      totalAmount: countryStats[country].totalAmount,
+      transactionCount: parseFloat(
+        countryStats[country].transactionCount.toFixed(3)
+      ),
+      totalAmount: parseFloat(countryStats[country].totalAmount.toFixed(3)),
     }));
 
     res.status(200).json({
@@ -428,91 +365,7 @@ const weeklyTop4Countries = async (req, res) => {
   }
 };
 
-const weeklySuccessMetrics = async (req, res) => {
-  try {
-    const results = {};
-
-    const currentWeekSuccessCounts = {};
-    const previousWeekSuccessCounts = {};
-
-    const today = new Date();
-
-    for (let i = 0; i < 7; i++) {
-      const currentDate = new Date();
-      currentDate.setDate(today.getDate() - i);
-
-      const fromDate = `${("0" + currentDate.getDate()).slice(-2)}/${(
-        "0" +
-        (currentDate.getMonth() + 1)
-      ).slice(-2)}/${currentDate.getFullYear()} 00:00:00`;
-      const toDate = `${("0" + currentDate.getDate()).slice(-2)}/${(
-        "0" +
-        (currentDate.getMonth() + 1)
-      ).slice(-2)}/${currentDate.getFullYear()} 23:59:59`;
-
-      const successCount = await LiveTransactionTable.countDocuments({
-        transactiondate: {
-          $gte: fromDate,
-          $lte: toDate,
-        },
-        Status: "Success",
-      });
-      currentWeekSuccessCounts[currentDate.toLocaleDateString("en-US")] =
-        successCount;
-    }
-
-    for (let i = 7; i < 14; i++) {
-      const currentDate = new Date();
-      currentDate.setDate(today.getDate() - i);
-
-      const fromDate = `${("0" + currentDate.getDate()).slice(-2)}/${(
-        "0" +
-        (currentDate.getMonth() + 1)
-      ).slice(-2)}/${currentDate.getFullYear()} 00:00:00`;
-      const toDate = `${("0" + currentDate.getDate()).slice(-2)}/${(
-        "0" +
-        (currentDate.getMonth() + 1)
-      ).slice(-2)}/${currentDate.getFullYear()} 23:59:59`;
-
-      const successCount = await LiveTransactionTable.countDocuments({
-        transactiondate: {
-          $gte: fromDate,
-          $lte: toDate,
-        },
-        Status: "Success",
-      });
-      previousWeekSuccessCounts[currentDate.toLocaleDateString("en-US")] =
-        successCount;
-    }
-
-    const totalCurrentWeekSuccessCount = Object.values(
-      currentWeekSuccessCounts
-    ).reduce((total, count) => total + count, 0);
-    const totalPreviousWeekSuccessCount = Object.values(
-      previousWeekSuccessCounts
-    ).reduce((total, count) => total + count, 0);
-
-    let percentageChange;
-    if (totalPreviousWeekSuccessCount !== 0) {
-      percentageChange =
-        ((totalCurrentWeekSuccessCount - totalPreviousWeekSuccessCount) /
-          (totalPreviousWeekSuccessCount + totalCurrentWeekSuccessCount)) *
-        100;
-    } else {
-      percentageChange = 100;
-    }
-
-    results["currentWeekSuccessCounts"] = currentWeekSuccessCounts;
-    results["percentageChange"] = percentageChange;
-
-    res.status(200).json({ results });
-  } catch (error) {
-    console.error("Error calculating weekly success percentage:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-};
-
-const last6Months = async (req, res) => {
+const successlast6Months = async (req, res) => {
   try {
     const today = new Date();
     let sixMonthsAgo = new Date(
@@ -626,7 +479,7 @@ const monthlyTransactionMetrics = async (req, res) => {
     )}/${lastDayOfPreviousMonth.getFullYear()} 23:59:59`;
 
     const successfulTransactionsThisMonth = await LiveTransactionTable.find({
-      transactiondate: { $gte: fromDate, $lt: toDate },
+      transactiondate: { $gte: fromDate, $lte: toDate },
       Status: "Success",
     });
 
@@ -634,7 +487,7 @@ const monthlyTransactionMetrics = async (req, res) => {
       {
         transactiondate: {
           $gte: fromDatePreviousMonth,
-          $lt: toDatePreviousMonth,
+          $lte: toDatePreviousMonth,
         },
         Status: "Success",
       }
@@ -650,12 +503,16 @@ const monthlyTransactionMetrics = async (req, res) => {
       0
     );
 
+    totalAmountTransactions = parseFloat(totalAmountTransactions.toFixed(3));
     numSuccessfulTransactions += successfulTransactionsThisMonth.length;
     totalAmountSuccessfulTransactions += successfulTransactionsThisMonth.reduce(
       (acc, txn) => acc + txn.amount,
       0
     );
 
+    totalAmountSuccessfulTransactions = parseFloat(
+      totalAmountSuccessfulTransactions.toFixed(3)
+    );
     const numSuccessfulTransactionsPreviousMonth =
       successfulTransactionsPreviousMonth.length;
     const totalAmountSuccessfulTransactionsPreviousMonth =
@@ -684,14 +541,9 @@ const monthlyTransactionMetrics = async (req, res) => {
 
 module.exports = {
   successPercentageToday,
-  successAmountToday,
-  transactionCountToday,
-  weeklySuccessVsFailed,
-  weeklyTransactionAmount,
-  weeklyTransactionCount,
+  weeklyStats,
   weeklyCardComparison,
   weeklyTop4Countries,
-  weeklySuccessMetrics,
+  successlast6Months,
   monthlyTransactionMetrics,
-  last6Months,
 };
