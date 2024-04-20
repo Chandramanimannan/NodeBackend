@@ -33,20 +33,6 @@ async function getLivedata(req, res) {
     const apiData = await response.json();
     const data = apiData.data;
 
-    // Merchant mapping
-    const merchantMapping = {
-      984: "Shazam Casino",
-      999: "Gumballpay",
-      923: "DNSPAY",
-      939: "Charge Money",
-      935: "SnelPay",
-      941: "Dux Group",
-      940: "Delasports-Bellona",
-      827: "Solid Payments",
-      928: "buckpay",
-      958: "Fiat Systems",
-    };
-
     // Get the last processed ID
     const lastProcessedRecord = await LiveTransactionTable.findOne().sort({
       livedata_id: -1,
@@ -59,14 +45,13 @@ async function getLivedata(req, res) {
       livedata_id: item.id,
       txnid: item.transactionId,
       merchantTxnId: item.mtxnID,
-      merchant: merchantMapping[item.merchant_id] || "",
+      merchant: item.merchant_name,
       amount: item.amount,
       fee: item.fee,
       merchant_fee: item.merchant_fee,
       backUrl: item.backUrl,
       merchant_id: item.merchant_id,
       transactiondate: formatDateTime(item.transaction_date),
-      // transactiondate: item.transaction_date,
       statusBKP: item.statusBKP,
       Status: item.status,
       isSettled: item.isSettled,
