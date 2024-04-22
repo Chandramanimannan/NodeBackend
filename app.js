@@ -20,6 +20,8 @@ const TransactionreportRoutes = require("./src/routes/transactionreportroute");
 // const DashboardCardRoutes = require("./src/routes/dashboardcardroute");
 const LiveTransactionData = require("./src/routes/livetransactiontableroute");
 const DashboardCardRoutes = require("./src/routes/newdashboardroutes");
+const NewRoutes = require("./src/routes/newroute");
+
 require("./src/config/database");
 
 const app = express();
@@ -48,6 +50,7 @@ app.use("/", DocumentcategoryRoutes);
 app.use("/", TransactionreportRoutes);
 app.use("/", DashboardCardRoutes);
 app.use("/", LiveTransactionData);
+app.use("/", NewRoutes);
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);

@@ -54,6 +54,7 @@ const weeklyStats = async (req, res) => {
     let failedThisWeek = 0;
     const transactionCounts = [];
     const previousWeekSuccessCounts = {};
+    let totalNumTxn = 0;
 
     for (let i = 0; i < 7; i++) {
       const dayDate = new Date(currentDate);
@@ -114,6 +115,8 @@ const weeklyStats = async (req, res) => {
         date: dayDate.toLocaleDateString("en-US"),
         count: transactionCount,
       });
+
+      totalNumTxn += transactionCount;
     }
 
     for (let i = 7; i < 14; i++) {
@@ -165,6 +168,7 @@ const weeklyStats = async (req, res) => {
       failedThisWeek,
       totalThisWeek,
       transactionCounts,
+      totalNumTxn,
       percentageChange,
     });
   } catch (error) {
