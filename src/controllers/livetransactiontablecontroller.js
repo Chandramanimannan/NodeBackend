@@ -37,10 +37,11 @@ async function getLivedata(req, res) {
     const lastProcessedRecord = await LiveTransactionTable.findOne().sort({
       livedata_id: -1,
     });
+    console.log("lastProcessedRecord", lastProcessedRecord);
     const maxId = lastProcessedRecord ? lastProcessedRecord.livedata_id : 1;
-
+    console.log("maxId", maxId);
     const newRecords = data.filter((item) => item.id > maxId);
-
+    console.log(newRecords);
     const dataToStore = newRecords.map((item) => ({
       livedata_id: item.id,
       txnid: item.transactionId,

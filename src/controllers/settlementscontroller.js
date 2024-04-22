@@ -484,10 +484,10 @@ async function createSettlement(req, res) {
     } = req.body;
 
     var [year, month, day] = fromDate.substring(0, 10).split("-");
-    const formattedfromDate = `${day}/${month}/${year} 00:00:00`;
+    const formattedfromDate = `${day}/${month}/${year} 13:00:00`;
 
     [year, month, day] = toDate.substring(0, 10).split("-");
-    const formattedtoDate = `${day}/${month}/${year} 23:59:59`;
+    const formattedtoDate = `${day}/${month}/${year} 15:00:00`;
 
     console.table({ formattedfromDate, formattedtoDate });
 
@@ -1102,10 +1102,10 @@ async function previewSettlement(req, res) {
     } = req.body;
 
     var [year, month, day] = fromDate.substring(0, 10).split("-");
-    const formattedfromDate = `${day}/${month}/${year} 00:00:00`;
+    const formattedfromDate = `${day}/${month}/${year} 15:15:00`;
 
     [year, month, day] = toDate.substring(0, 10).split("-");
-    const formattedtoDate = `${day}/${month}/${year} 23:59:59`;
+    const formattedtoDate = `${day}/${month}/${year} 16:15:00`;
 
     console.table({ formattedfromDate, formattedtoDate });
 

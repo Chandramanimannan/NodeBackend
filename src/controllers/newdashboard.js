@@ -371,94 +371,93 @@ const weeklyTop4Countries = async (req, res) => {
 
 const monthlyTransactionMetrics = async (req, res) => {
   try {
+    const today = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+
     let numTransactions = 0;
     let numSuccessfulTransactions = 0;
     let totalAmountTransactions = 0;
     let totalAmountSuccessfulTransactions = 0;
 
-    const today = new Date();
-    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    for (let i = 0; i < 32; i++) {
+      const dayDate = new Date(thirtyDaysAgo);
+      dayDate.setDate(thirtyDaysAgo.getDate() + i);
 
-    const firstDayOfPreviousMonth = new Date(
-      today.getFullYear(),
-      today.getMonth() - 1,
-      1
-    );
+      const formattedFromDate = `${("0" + dayDate.getDate()).slice(-2)}/${(
+        "0" +
+        (dayDate.getMonth() + 1)
+      ).slice(-2)}/${dayDate.getFullYear()} 00:00:00`;
+      const formattedToDate = `${("0" + dayDate.getDate()).slice(-2)}/${(
+        "0" +
+        (dayDate.getMonth() + 1)
+      ).slice(-2)}/${dayDate.getFullYear()} 23:59:59`;
 
-    const lastDayOfPreviousMonth = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      0
-    );
-
-    const fromDate = `${("0" + firstDayOfMonth.getDate()).slice(-2)}/${(
-      "0" +
-      (firstDayOfMonth.getMonth() + 1)
-    ).slice(-2)}/${firstDayOfMonth.getFullYear()} 00:00:00`;
-    const toDate = `${("0" + today.getDate()).slice(-2)}/${(
-      "0" +
-      (today.getMonth() + 1)
-    ).slice(-2)}/${today.getFullYear()} 23:59:59`;
-    const fromDatePreviousMonth = `${(
-      "0" + firstDayOfPreviousMonth.getDate()
-    ).slice(-2)}/${("0" + (firstDayOfPreviousMonth.getMonth() + 1)).slice(
-      -2
-    )}/${firstDayOfPreviousMonth.getFullYear()} 00:00:00`;
-    const toDatePreviousMonth = `${(
-      "0" + lastDayOfPreviousMonth.getDate()
-    ).slice(-2)}/${("0" + (lastDayOfPreviousMonth.getMonth() + 1)).slice(
-      -2
-    )}/${lastDayOfPreviousMonth.getFullYear()} 23:59:59`;
-
-    const successfulTransactionsThisMonth = await LiveTransactionTable.find({
-      transactiondate: { $gte: fromDate, $lte: toDate },
-      Status: "Success",
-    });
-
-    const successfulTransactionsPreviousMonth = await LiveTransactionTable.find(
-      {
+      const transactions = await LiveTransactionTable.find({
         transactiondate: {
-          $gte: fromDatePreviousMonth,
-          $lte: toDatePreviousMonth,
+          $gte: formattedFromDate,
+          $lte: formattedToDate,
         },
-        Status: "Success",
-      }
-    );
+      });
+      console.log(formattedFromDate);
+      console.log(formattedToDate);
 
-    const allTransactions = await LiveTransactionTable.find({
-      transactiondate: { $gte: fromDate, $lt: toDate },
-    });
-
-    numTransactions += allTransactions.length;
-    totalAmountTransactions += allTransactions.reduce(
-      (acc, txn) => acc + txn.amount,
-      0
-    );
-
-    totalAmountTransactions = parseFloat(totalAmountTransactions.toFixed(3));
-    numSuccessfulTransactions += successfulTransactionsThisMonth.length;
-    totalAmountSuccessfulTransactions += successfulTransactionsThisMonth.reduce(
-      (acc, txn) => acc + txn.amount,
-      0
-    );
-
-    totalAmountSuccessfulTransactions = parseFloat(
-      totalAmountSuccessfulTransactions.toFixed(3)
-    );
-    const numSuccessfulTransactionsPreviousMonth =
-      successfulTransactionsPreviousMonth.length;
-    const totalAmountSuccessfulTransactionsPreviousMonth =
-      successfulTransactionsPreviousMonth.reduce(
-        (acc, txn) => acc + txn.amount,
+      numTransactions += transactions.length;
+      totalAmountTransactions += transactions.reduce(
+        (total, txn) => total + txn.amount,
         0
       );
 
-    const growthPercentage =
-      ((numSuccessfulTransactions - numSuccessfulTransactionsPreviousMonth) /
-        numSuccessfulTransactionsPreviousMonth) *
-      100;
+      const successfulTransactions = transactions.filter(
+        (txn) => txn.Status === "Success"
+      );
+      numSuccessfulTransactions += successfulTransactions.length;
+      totalAmountSuccessfulTransactions += successfulTransactions.reduce(
+        (total, txn) => total + txn.amount,
+        0
+      );
+    }
 
-    res.json({
+    let numTransactionsPreviousMonth = 0;
+    let numSuccessfulTransactionsPreviousMonth = 0;
+
+    for (let i = 32; i < 60; i++) {
+      const dayDate = new Date(thirtyDaysAgo);
+      dayDate.setDate(thirtyDaysAgo.getDate() + i);
+
+      const formattedFromDate = `${("0" + dayDate.getDate()).slice(-2)}/${(
+        "0" +
+        (dayDate.getMonth() + 1)
+      ).slice(-2)}/${dayDate.getFullYear()} 00:00:00`;
+      const formattedToDate = `${("0" + dayDate.getDate()).slice(-2)}/${(
+        "0" +
+        (dayDate.getMonth() + 1)
+      ).slice(-2)}/${dayDate.getFullYear()} 23:59:59`;
+
+      const transactions = await LiveTransactionTable.find({
+        transactiondate: {
+          $gte: formattedFromDate,
+          $lte: formattedToDate,
+        },
+      });
+
+      numTransactionsPreviousMonth += transactions.length;
+
+      const successfulTransactions = transactions.filter(
+        (txn) => txn.Status === "Success"
+      );
+      numSuccessfulTransactionsPreviousMonth += successfulTransactions.length;
+    }
+
+    const growthPercentage =
+      numSuccessfulTransactionsPreviousMonth === 0
+        ? 100
+        : ((numSuccessfulTransactions -
+            numSuccessfulTransactionsPreviousMonth) /
+            numSuccessfulTransactionsPreviousMonth) *
+          100;
+
+    res.status(200).json({
       numTransactions,
       numSuccessfulTransactions,
       totalAmountTransactions,
@@ -466,8 +465,8 @@ const monthlyTransactionMetrics = async (req, res) => {
       growthPercentage,
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error("Error calculating last 30 days stats:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
