@@ -369,78 +369,6 @@ const weeklyTop4Countries = async (req, res) => {
   }
 };
 
-const successlast6Months = async (req, res) => {
-  try {
-    const today = new Date();
-    let sixMonthsAgo = new Date(
-      today.getFullYear(),
-      today.getMonth() - 5,
-      today.getDate()
-    );
-
-    while (sixMonthsAgo.getMonth() < 0) {
-      sixMonthsAgo.setFullYear(sixMonthsAgo.getFullYear() - 1);
-      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() + 12);
-    }
-
-    const salesByMonth = [];
-    let totalSalesAmountAllMonths = 0;
-
-    for (let i = 0; i < 6; i++) {
-      const fromDate = `${("0" + sixMonthsAgo.getDate()).slice(-2)}/${(
-        "0" +
-        (sixMonthsAgo.getMonth() + 1)
-      ).slice(-2)}/${sixMonthsAgo.getFullYear()} 00:00:00`;
-      const nextMonthDate = `${("0" + sixMonthsAgo.getDate()).slice(-2)}/${(
-        "0" +
-        (sixMonthsAgo.getMonth() + 2)
-      ).slice(-2)}/${sixMonthsAgo.getFullYear()} 23:59:59`;
-
-      const sales = await LiveTransactionTable.find({
-        transactiondate: {
-          $gte: fromDate,
-          $lt: nextMonthDate,
-        },
-      });
-
-      let totalSalesAmount = 0;
-      for (const sale of sales) {
-        totalSalesAmount += sale.amount;
-        totalSalesAmountAllMonths += sale.amount;
-      }
-
-      const monthNames = [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-      ];
-
-      salesByMonth.push({
-        month: `${
-          monthNames[sixMonthsAgo.getMonth()]
-        } ${sixMonthsAgo.getFullYear()}`,
-        totalSalesAmount,
-      });
-
-      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() + 1);
-    }
-
-    res.status(200).json({ salesByMonth, totalSalesAmountAllMonths });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-
 const monthlyTransactionMetrics = async (req, res) => {
   try {
     let numTransactions = 0;
@@ -540,6 +468,57 @@ const monthlyTransactionMetrics = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const successlast6Months = async (req, res) => {
+  try {
+    const transactions = await LiveTransactionTable.find({ Status: "Success" });
+
+    const salesByMonth = {};
+    let totalSales = 0;
+
+    for (let i = 0; i < 6; i++) {
+      const currentDate = new Date();
+      const startDate = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() - i,
+        1
+      );
+      const endDate = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() - i + 1,
+        0
+      );
+
+      const filteredTransactions = transactions.filter((transaction) => {
+        const transactionDate = new Date(
+          transaction.transactiondate.replace(
+            /(\d{2})\/(\d{2})\/(\d{4})/,
+            "$2/$1/$3"
+          )
+        );
+        return transactionDate >= startDate && transactionDate <= endDate;
+      });
+
+      const totalAmount = filteredTransactions.reduce(
+        (total, transaction) => total + transaction.amount,
+        0
+      );
+
+      salesByMonth[
+        startDate.toLocaleDateString("en-US", {
+          month: "long",
+          year: "numeric",
+        })
+      ] = totalAmount;
+      totalSales += totalAmount;
+    }
+
+    res.json({ salesByMonth, totalSales });
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    res.status(500).json({ error: "An error occurred while fetching data" });
   }
 };
 
