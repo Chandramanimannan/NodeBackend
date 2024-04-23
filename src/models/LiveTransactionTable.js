@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const LiveTransactionTableSchema = new mongoose.Schema({
-  livedata_id: { type: Number },
+  livedata_id: { type: Number, unique: true },
   txnid: { type: String },
   merchantTxnId: { type: String },
   merchant: { type: String },

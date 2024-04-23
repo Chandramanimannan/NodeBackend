@@ -3,6 +3,7 @@ const AutoIncrement = require("mongoose-sequence")(mongoose);
 
 const clientSchema = new mongoose.Schema({
   company_name: { type: String, required: true, unique: true },
+  merchant_id: { type: String },
   company_type: { type: String, required: true },
   website_url: { type: String },
   company_email: { type: String, required: true, unique: true },

@@ -597,15 +597,16 @@ async function createSettlement(req, res) {
       (settlementDate.getMonth() + 1)
     ).slice(-2)}/${settlementDate.getFullYear()}`;
 
+    const report_id = calculateReportID(client_data.client_id);
     settlement_record = {
       client_id: client_data["client_id"],
+      report_id,
       company_name,
       fromDate: formattedfromDate.substring(0, 10),
       toDate: formattedtoDate.substring(0, 10),
       total_vol: app_vol,
       eur_app_count: app_count,
       eur_dec_count: dec_count,
-
       MDR_amount,
       app_amount,
       dec_amount,
@@ -1250,6 +1251,37 @@ async function previewSettlement(req, res) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
+}
+
+async function calculateReportID(client_id) {
+  const lastRecord = await Settlementtable.aggregate([
+    { $match: { client_id } },
+    {
+      $addFields: {
+        reportNumber: {
+          $substr: [
+            "$report_id",
+            { $subtract: [{ $strLenCP: "$report_id" }, 2] },
+            2,
+          ],
+        },
+      },
+    },
+    {
+      $group: {
+        _id: "$client_id",
+        maxReportNumber: { $max: { $toInt: "$reportNumber" } },
+      },
+    },
+  ]);
+
+  let nextReportNumber = 1;
+  if (lastRecord.length > 0) {
+    nextReportNumber = lastRecord[0].maxReportNumber + 1;
+  }
+  const reportNumberPadded = nextReportNumber.toString().padStart(2, "0");
+  const report_id = `${client_id}${reportNumberPadded}`;
+  return report_id;
 }
 
 function calculateCurrencyValues(transactions, currency) {

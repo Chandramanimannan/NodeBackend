@@ -37,16 +37,17 @@ async function getLivedata(req, res) {
     const lastProcessedRecord = await LiveTransactionTable.findOne().sort({
       livedata_id: -1,
     });
-    console.log("lastProcessedRecord", lastProcessedRecord);
+    // console.log("lastProcessedRecord", lastProcessedRecord);
     const maxId = lastProcessedRecord ? lastProcessedRecord.livedata_id : 1;
     console.log("maxId", maxId);
-    const newRecords = data.filter((item) => item.id > maxId);
+    newRecords = data.filter((item) => item.id > maxId);
     console.log(newRecords);
+
     const dataToStore = newRecords.map((item) => ({
       livedata_id: item.id,
       txnid: item.transactionId,
       merchantTxnId: item.mtxnID,
-      merchant: item.merchant_name,
+      merchant: item.merchant_name.toLowerCase(),
       amount: item.amount,
       fee: item.fee,
       merchant_fee: item.merchant_fee,
@@ -110,7 +111,7 @@ async function getLivedata(req, res) {
   }
 }
 
-const interval = 3000; // 3 sec interval
+const interval = 60000; // 1 min interval
 setInterval(getLivedata, interval);
 
 module.exports = { getLivedata };
