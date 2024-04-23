@@ -407,7 +407,7 @@ const monthlyTransactionMetrics = async (req, res) => {
         (total, txn) => total + txn.amount,
         0
       );
-
+      totalAmountTransactions = parseFloat(totalAmountTransactions.toFixed(3));
       const successfulTransactions = transactions.filter(
         (txn) => txn.Status === "Success"
       );
@@ -417,6 +417,10 @@ const monthlyTransactionMetrics = async (req, res) => {
         0
       );
     }
+
+    totalAmountSuccessfulTransactions = parseFloat(
+      totalAmountSuccessfulTransactions.toFixed(3)
+    );
 
     let numTransactionsPreviousMonth = 0;
     let numSuccessfulTransactionsPreviousMonth = 0;
@@ -500,10 +504,12 @@ const successlast6Months = async (req, res) => {
         return transactionDate >= startDate && transactionDate <= endDate;
       });
 
-      const totalAmount = filteredTransactions.reduce(
+      let totalAmount = filteredTransactions.reduce(
         (total, transaction) => total + transaction.amount,
         0
       );
+
+      totalAmount = parseFloat(totalAmount.toFixed(3));
 
       salesByMonth[
         startDate.toLocaleDateString("en-US", {
