@@ -26,3 +26,4 @@ jobs:
         cache: 'npm'
     - run: npm ci
     - run: pm2 restart app.js
+    - run: node -v
