@@ -47,7 +47,9 @@ async function getLivedata(req, res) {
       livedata_id: item.id,
       txnid: item.transactionId,
       merchantTxnId: item.mtxnID,
-      merchant: item.merchant_name.toLowerCase(),
+      merchant:
+        item["merchant_name"].trim().charAt(0).toUpperCase() +
+        item["merchant_name"].slice(1).toLowerCase(),
       amount: item.amount,
       fee: item.fee,
       merchant_fee: item.merchant_fee,
