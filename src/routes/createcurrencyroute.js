@@ -1,4 +1,5 @@
 const express = require("express");
+const { verifyToken } = require("../middlewares/verifyToken");
 const {
   createCurrency,
   getCurrency,
@@ -9,10 +10,10 @@ const {
 
 const router = express.Router();
 
-router.post("/mastersettings/currency", createCurrency);
-router.get("/mastersettings/currency", getCurrency);
-router.post("/mastersettings/searchcurrency", searchCurrency);
-router.delete("/mastersettings/deletecurrency", deleteCurrency);
-router.put("/mastersettings/updatecurrency", updateCurrency);
+router.post("/mastersettings/currency", verifyToken, createCurrency);
+router.get("/mastersettings/currency", verifyToken, getCurrency);
+router.post("/mastersettings/searchcurrency", verifyToken, searchCurrency);
+router.delete("/mastersettings/deletecurrency", verifyToken, deleteCurrency);
+router.put("/mastersettings/updatecurrency", verifyToken, updateCurrency);
 
 module.exports = router;

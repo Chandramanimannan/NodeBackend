@@ -1,4 +1,5 @@
 const express = require("express");
+const { verifyToken } = require("../middlewares/verifyToken");
 const {
   createCategory,
   getCategory,
@@ -10,10 +11,10 @@ const {
 const router = express.Router();
 
 // Define user routes
-router.post("/mastersettings/category", createCategory);
-router.get("/mastersettings/category", getCategory);
-router.post("/mastersettings/searchcategory", searchCategory);
-router.delete("/mastersettings/deletecategory", deleteCategory);
-router.put("/mastersettings/updatecategory", updateCategory);
+router.post("/mastersettings/category", verifyToken, createCategory);
+router.get("/mastersettings/category", verifyToken, getCategory);
+router.post("/mastersettings/searchcategory", verifyToken, searchCategory);
+router.delete("/mastersettings/deletecategory", verifyToken, deleteCategory);
+router.put("/mastersettings/updatecategory", verifyToken, updateCategory);
 
 module.exports = router;

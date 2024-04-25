@@ -1,4 +1,5 @@
 const express = require("express");
+const { verifyToken } = require("../middlewares/verifyToken");
 const {
   createDocumenttype,
   getDocumenttype,
@@ -9,10 +10,10 @@ const {
 
 const router = express.Router();
 
-router.post("/mastersettings/documenttype", createDocumenttype);
-router.get("/mastersettings/documenttype", getDocumenttype);
-router.post("/mastersettings/searchdocumenttype", searchDocumenttype);
-router.delete("/mastersettings/deletedocumenttype", deleteDocumenttype);
-router.put("/mastersettings/updatedocumenttype", updateDocumenttype);
+router.post("/mastersettings/documenttype", verifyToken, createDocumenttype);
+router.get("/mastersettings/documenttype", verifyToken, getDocumenttype);
+router.post("/mastersettings/searchdocumenttype", verifyToken, searchDocumenttype);
+router.delete("/mastersettings/deletedocumenttype", verifyToken, deleteDocumenttype);
+router.put("/mastersettings/updatedocumenttype", verifyToken, updateDocumenttype);
 
 module.exports = router;

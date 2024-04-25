@@ -1,4 +1,5 @@
 const express = require("express");
+const { verifyToken } = require("../middlewares/verifyToken");
 const {
   searchTransactionReport,
   quickSearch,
@@ -14,14 +15,14 @@ const {
 const router = express.Router();
 
 // Define user routes
-router.post("/transactionreport", searchTransactionReport);
-router.get("/transactionreport", quickSearch);
-router.post("/multisearch", multiTransactions);
-router.get("/reporttoday", transactionsToday);
-router.get("/reportyesterday", transactionsYesterday);
-router.get("/reportlast7days", transactionsLast7Days);
-router.get("/reportlast15days", transactionsLast15Days);
-router.get("/reportlast30days", transactionsLast30Days);
-router.get("/reportlastyear", transactionsLastYear);
+router.post("/transactionreport", verifyToken, searchTransactionReport);
+router.get("/transactionreport", verifyToken, quickSearch);
+router.post("/multisearch", verifyToken, multiTransactions);
+router.get("/reporttoday", verifyToken, transactionsToday);
+router.get("/reportyesterday", verifyToken, transactionsYesterday);
+router.get("/reportlast7days", verifyToken, transactionsLast7Days);
+router.get("/reportlast15days", verifyToken, transactionsLast15Days);
+router.get("/reportlast30days", verifyToken, transactionsLast30Days);
+router.get("/reportlastyear", verifyToken, transactionsLastYear);
 
 module.exports = router;

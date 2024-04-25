@@ -1,4 +1,5 @@
 const express = require("express");
+const { verifyToken } = require("../middlewares/verifyToken");
 const {
     createBusinesstype,
     getBusinesstype,
@@ -10,10 +11,10 @@ const {
 const router = express.Router();
 
 // Define user routes
-router.post("/mastersettings/businesstypes", createBusinesstype);
-router.get("/mastersettings/businesstypes", getBusinesstype);
-router.post("/mastersettings/searchbusinesstypes", searchBusinesstype);
-router.delete("/mastersettings/deletebusinesstypes", deleteBusinesstype);
-router.put("/mastersettings/updatebusinesstypes", updateBusinesstype);
+router.post("/mastersettings/businesstypes", verifyToken, createBusinesstype);
+router.get("/mastersettings/businesstypes", verifyToken, getBusinesstype);
+router.post("/mastersettings/searchbusinesstypes", verifyToken, searchBusinesstype);
+router.delete("/mastersettings/deletebusinesstypes", verifyToken, deleteBusinesstype);
+router.put("/mastersettings/updatebusinesstypes", verifyToken, updateBusinesstype);
 
 module.exports = router;

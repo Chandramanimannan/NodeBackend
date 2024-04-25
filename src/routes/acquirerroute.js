@@ -1,4 +1,5 @@
 const express = require("express");
+const { verifyToken } = require("../middlewares/verifyToken");
 const {
   createAcquirer,
   getAcquirer,
@@ -7,7 +8,7 @@ const {
 const router = express.Router();
 
 // Define user routes
-router.post("/acquirers", createAcquirer);
-router.get("/acquirers", getAcquirer);
+router.post("/acquirers", verifyToken, createAcquirer);
+router.get("/acquirers", verifyToken, getAcquirer);
 
 module.exports = router;

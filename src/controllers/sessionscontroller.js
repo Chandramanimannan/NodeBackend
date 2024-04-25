@@ -13,7 +13,7 @@ async function login(req, res) {
     // Check if the user exists and verify the password
     if (user && (await bcrypt.compare(password, user.password))) {
       const token = jwt.sign(
-        { userId: user.id, email },
+        { userId: user.id, email, role: user.role },
         process.env.SECRET_KEY,
         {
           expiresIn: "30m",

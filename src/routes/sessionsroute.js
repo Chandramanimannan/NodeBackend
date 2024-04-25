@@ -1,4 +1,5 @@
 const express = require("express");
+const { verifyToken } = require("../middlewares/verifyToken");
 const {
   login,
   updateUser,
@@ -11,8 +12,8 @@ const router = express.Router();
 
 // Define user routes
 router.post("/login", login);
-router.put("/updateuser", updateUser);
-router.get("/userdetails", userDetails);
-router.post("/forgotpassword", sendOTPByEmail),
-  router.patch("/resetpassword", resetPassword),
+router.put("/updateuser", verifyToken, updateUser);
+router.get("/userdetails", verifyToken, userDetails);
+router.post("/forgotpassword", verifyToken, sendOTPByEmail),
+  router.patch("/resetpassword", verifyToken, resetPassword),
   (module.exports = router);

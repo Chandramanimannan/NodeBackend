@@ -1,4 +1,5 @@
 const express = require("express");
+const { verifyToken } = require("../middlewares/verifyToken");
 const {
   createDocumentcategory,
   getDocumentcategory,
@@ -9,10 +10,10 @@ const {
 
 const router = express.Router();
 
-router.post("/mastersettings/documentcategory", createDocumentcategory);
-router.get("/mastersettings/documentcategory", getDocumentcategory);
-router.post("/mastersettings/searchdocumentcategory", searchDocumentcategory);
-router.delete("/mastersettings/deletedocumentcategory", deleteDocumentcategory);
-router.put("/mastersettings/updatedocumentcategory", updateDocumentcategory);
+router.post("/mastersettings/documentcategory", verifyToken, createDocumentcategory);
+router.get("/mastersettings/documentcategory", verifyToken, getDocumentcategory);
+router.post("/mastersettings/searchdocumentcategory", verifyToken, searchDocumentcategory);
+router.delete("/mastersettings/deletedocumentcategory", verifyToken, deleteDocumentcategory);
+router.put("/mastersettings/updatedocumentcategory", verifyToken, updateDocumentcategory);
 
 module.exports = router;

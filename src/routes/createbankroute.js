@@ -1,4 +1,5 @@
 const express = require("express");
+const { verifyToken } = require("../middlewares/verifyToken");
 const {
   createBank,
   getBank,
@@ -9,10 +10,10 @@ const {
 
 const router = express.Router();
 
-router.post("/mastersettings/bank", createBank);
-router.get("/mastersettings/bank", getBank);
-router.post("/mastersettings/searchbank", searchBank);
-router.delete("/mastersettings/deletebank", deleteBank);
-router.put("/mastersettings/updatebank", updateBank);
+router.post("/mastersettings/bank", verifyToken, createBank);
+router.get("/mastersettings/bank", verifyToken, getBank);
+router.post("/mastersettings/searchbank", verifyToken, searchBank);
+router.delete("/mastersettings/deletebank", verifyToken, deleteBank);
+router.put("/mastersettings/updatebank", verifyToken, updateBank);
 
 module.exports = router;

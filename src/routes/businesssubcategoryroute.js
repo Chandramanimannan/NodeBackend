@@ -1,4 +1,5 @@
 const express = require("express");
+const { verifyToken } = require("../middlewares/verifyToken");
 const {
   createBusinesssubcategory,
   getBusinesssubcategory,
@@ -9,10 +10,10 @@ const {
 
 const router = express.Router();
 
-router.post("/mastersettings/businesssubcategory", createBusinesssubcategory);
-router.get("/mastersettings/businesssubcategory", getBusinesssubcategory);
-router.post("/mastersettings/searchbusinesssubcategory", searchBusinesssubcategory);
-router.delete("/mastersettings/deletebusinesssubcategory", deleteBusinesssubcategory);
-router.put("/mastersettings/updatebusinesssubcategory", updateBusinesssubcategory);
+router.post("/mastersettings/businesssubcategory", verifyToken, createBusinesssubcategory);
+router.get("/mastersettings/businesssubcategory", verifyToken, getBusinesssubcategory);
+router.post("/mastersettings/searchbusinesssubcategory", verifyToken, searchBusinesssubcategory);
+router.delete("/mastersettings/deletebusinesssubcategory", verifyToken, deleteBusinesssubcategory);
+router.put("/mastersettings/updatebusinesssubcategory", verifyToken, updateBusinesssubcategory);
 
 module.exports = router;
